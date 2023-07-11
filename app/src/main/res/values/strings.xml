@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">pbxComponentTracking</string>
+    <string name="linkButtonText">Link</string>
+    <string name="frameLabel">Frame</string>
+    <string name="SNFrameLabel">Serial number:</string>
+    <string name="componentLabel">Component</string>
+    <string name="cmpTypeLabel">Type:</string>
+    <string name="cmpSNLabel">Serial number:</string>
+    <string name="cmpPNLabel">Part number:</string>
+    <string name="scanBtnLabel">Scan</string>
+    <string name="cmpDDLabel">DD number</string>
+    <string name="cmpTrackingText">Components</string>
+    <string name="orders">Orders</string>
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

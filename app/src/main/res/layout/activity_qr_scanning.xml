@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+tools:context=".QrScanning">
+
+<androidx.constraintlayout.widget.Guideline
+    android:id="@+id/systemUI"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    app:layout_constraintGuide_begin="0dp" />
+
+<androidx.constraintlayout.widget.Guideline
+    android:id="@+id/startGuideline"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    app:layout_constraintGuide_begin="16dp" />
+
+<androidx.constraintlayout.widget.Guideline
+    android:id="@+id/endGuideline"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    app:layout_constraintGuide_end="16dp" />
+
+<androidx.constraintlayout.widget.Guideline
+    android:id="@+id/topGuideline"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    app:layout_constraintGuide_begin="70dp" />
+
+<androidx.constraintlayout.widget.Guideline
+    android:id="@+id/bottomGuideline"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    app:layout_constraintGuide_end="5dp" />
+
+
+<androidx.cardview.widget.CardView
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    app:cardCornerRadius="22dp"
+    app:cardPreventCornerOverlap="false"
+    app:layout_constraintBottom_toTopOf="@+id/bottomGuideline"
+    app:layout_constraintEnd_toStartOf="@+id/endGuideline"
+    app:layout_constraintStart_toStartOf="@+id/startGuideline"
+    app:layout_constraintTop_toBottomOf="@+id/topGuideline">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/cameraSurfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center|bottom"
+        
+        android:paddingBottom="13dp"
+        android:text="Focus on Barcode / QR-Code"
+        app:autoSizeTextType="uniform"
+        app:autoSizeMinTextSize="4sp"
+        app:autoSizeMaxTextSize="100sp"
+        app:autoSizeStepGranularity="2sp"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="4sp"
+        android:autoSizeMaxTextSize="100sp"
+        android:autoSizeStepGranularity="2sp"
+        android:textColor="@color/white"
+        tools:targetApi="o" />
+
+</androidx.cardview.widget.CardView>
+
+<ImageButton
+    android:contentDescription="Gib den Blinden was zum lesen!"
+    android:id="@+id/buttonBack"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:scaleType="centerCrop"
+    app:layout_constraintBottom_toTopOf="@+id/topGuideline"
+    app:layout_constraintStart_toStartOf="@+id/startGuideline"
+    app:layout_constraintTop_toTopOf="@+id/systemUI"
+    app:layout_constraintVertical_bias="0.5"
+    app:srcCompat="@drawable/ic_baseline_arrow_back_24"/>
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="12dp"
+    android:text="Scanning"
+    android:textAlignment="center"
+    android:textSize="28sp"
+    app:layout_constraintBottom_toTopOf="@+id/topGuideline"
+    app:layout_constraintEnd_toStartOf="@+id/endGuideline"
+    app:layout_constraintHorizontal_bias="0.07"
+    app:layout_constraintStart_toEndOf="@+id/buttonBack"
+    app:layout_constraintTop_toBottomOf="@+id/systemUI" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
