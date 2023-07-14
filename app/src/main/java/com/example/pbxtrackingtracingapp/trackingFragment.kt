@@ -1,22 +1,38 @@
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
+import android.widget.RelativeLayout
+import android.widget.RelativeLayout.LayoutParams
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Response
+import com.android.volley.toolbox.RequestFuture
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.pbxtrackingtracingapp.QrScanning
 import com.example.pbxtrackingtracingapp.R
+import com.example.pbxtrackingtracingapp.requestNegativeFragment
+import com.example.pbxtrackingtracingapp.requestPending
+import com.example.pbxtrackingtracingapp.requestPositiveFragment
+import org.w3c.dom.Text
 import java.nio.charset.Charset
+import java.util.concurrent.TimeUnit
+
 
 class trackingFragment:Fragment(R.layout.fragment_tracking) {
 
@@ -44,7 +60,7 @@ class trackingFragment:Fragment(R.layout.fragment_tracking) {
     }
 
 //  COMPONENT SCANNING
-private val intentLauncherComponent =
+    private val intentLauncherComponent =
     registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             // update the TextView fields
@@ -70,6 +86,7 @@ private val intentLauncherComponent =
     private val listenerSendLink = View.OnClickListener { ImageView ->
         when (ImageView.id){
             R.id.link_Button -> {
+//                postComponentLink()
                 postComponentLink()
                 clearTextFields()
             }
@@ -77,7 +94,9 @@ private val intentLauncherComponent =
     }
 
     private fun postComponentLink(){
-        lateinit var responseString : String
+        val progressBar = ProgressBarHandler(requireContext())
+//        val errorView = ErrorPopupHandler(requireContext())
+
         val queue = Volley.newRequestQueue(requireContext())
         val url =
             "https://script.google.com/macros/s/AKfycbzJauAnAvlcauQM1fxXw5YC1HNCduSZXMQ0hetVR0ilATK0zAjwH7rNKS6VkoVJzvqeIg/exec"
@@ -97,10 +116,16 @@ private val intentLauncherComponent =
                     // response
                     val strResp = response.toString()
                     Log.d("API", strResp)
+                    progressBar.hide()
+                    Toast.makeText(requireContext(), "Components successfully linked!", Toast.LENGTH_LONG).show()
 
                 },
                 Response.ErrorListener { error ->
                     Log.d("API", "error => $error")
+                    val errorString = error.toString()
+                    progressBar.hide()
+//                    errorView.show()
+                    Toast.makeText(requireContext(), errorString, Toast.LENGTH_LONG).show()
                 }
             ) {
                 override fun getBody(): ByteArray {
@@ -109,6 +134,76 @@ private val intentLauncherComponent =
             }
         stringReq.setRetryPolicy(DefaultRetryPolicy(10000, 5, 1.0F))
         queue.add(stringReq)
+        progressBar.show()
+    }
+
+    private fun activateRequestPending() {
+        val transaction = activity?.supportFragmentManager?.beginTransaction()
+        if (transaction != null) {
+            transaction.replace(R.id.flFragment, requestPending())
+            transaction.commit()
+        }
+    }
+
+    private fun activateRequestPositive(response: String){
+        val transaction = activity?.supportFragmentManager?.beginTransaction()
+        if (transaction != null) {
+            transaction.replace(R.id.flFragment, requestPositiveFragment())
+            transaction.commit()
+        }
+
+        Thread.sleep(500)
+        if (transaction != null) {
+            transaction.replace(R.id.flFragment, trackingFragment())
+            transaction.commit()
+        }
+    }
+
+    private fun activateRequestNegative(response: String, main_activity: Fragment){
+        val transaction = activity?.supportFragmentManager?.beginTransaction()
+        if (transaction != null) {
+            transaction.replace(R.id.flFragment, requestNegativeFragment())
+            transaction.commit()
+        }
+        Thread.sleep(500)
+        if (transaction != null) {
+            transaction.replace(R.id.flFragment, trackingFragment())
+            transaction.commit()
+        }
+    }
+
+    private fun postComponentLink_snychCall(): String{
+        lateinit var response: String
+        var future = RequestFuture.newFuture<String>()
+        val queue = Volley.newRequestQueue(requireContext())
+        val url =
+            "https://script.google.com/macros/s/AKfycbzJauAnAvlcauQM1fxXw5YC1HNCduSZXMQ0hetVR0ilATK0zAjwH7rNKS6VkoVJzvqeIg/exec"
+
+        val requArray = listOf<String>(
+            "action=linkComponents",
+            "frame_pn="+view?.findViewById<TextView>(R.id.FramePNText)!!.text.toString(),
+            "frame_sn="+view?.findViewById<TextView>(R.id.FrameSNText)!!.text.toString(),
+            "cmp_sn="+view?.findViewById<TextView>(R.id.CmpSNText)!!.text.toString(),
+            "cmp_pn="+view?.findViewById<TextView>(R.id.CmpPNText)!!.text.toString()
+        )
+        val requestBody = requArray.joinToString(separator = "&")
+        val stringReq: StringRequest =
+            object : StringRequest(Method.POST, url, future, future) {
+                override fun getBody(): ByteArray {
+                    return requestBody.toByteArray(Charset.defaultCharset())
+                }
+
+            }
+
+        stringReq.setRetryPolicy(DefaultRetryPolicy(10000, 5, 1.0F))
+        queue.add(stringReq)
+
+        try {
+            var response = future.get(10, TimeUnit.SECONDS)
+        } catch (e: InterruptedException){
+
+        }
+        return response
     }
 
     private fun clearTextFields(){
@@ -152,4 +247,103 @@ private val intentLauncherComponent =
     }
 
 
+}
+
+/**
+ * Diese Klasse stellt einen Progressbar bereit. Dieser kann am Screen eingeblendet werden
+ * um dem User bei Lade/Arbeit-Schritten ein visuelles Feedback zu geben, dass die App
+ * funktioniert und der noch warten soll.
+ */
+class ProgressBarHandler(mContext: Context) {
+
+    private val mProgressBar: ProgressBar
+    private lateinit var rl: RelativeLayout
+
+    // Callback um sichtbar zu schalten
+    fun show() {
+        mProgressBar.visibility = View.VISIBLE
+        rl.setBackgroundColor(Color.parseColor("#FFFFFF"))
+    }
+
+    // Callback um unsichtbar zu schalten
+    fun hide() {
+        mProgressBar.visibility = View.INVISIBLE
+        rl.setBackgroundColor(Color.parseColor("#00000000"))
+    }
+
+    // Init-Callback
+    init {
+
+        // Lade das Layout auf welche der Progressbar eingebettet werden soll
+        val layout = (mContext as Activity).findViewById<View>(android.R.id.content).rootView as ViewGroup
+
+        // Erstelle "ProgressBar" und sichere die Referenz
+        mProgressBar = ProgressBar(mContext, null, android.R.attr.progressBarStyleLarge)
+
+        // Aktiviere Infinite-Animation
+        mProgressBar.isIndeterminate = true
+
+        // Erstelle ein RelativeLayout um die Abmessungen (x,y) zu definieren
+        val params = RelativeLayout.LayoutParams(
+            LayoutParams.MATCH_PARENT,
+            LayoutParams.MATCH_PARENT,
+        )
+
+
+        // Erstelle ein weiteres RelativeLayout umd die Position zu definieren
+        rl = RelativeLayout(mContext)
+        rl.gravity = Gravity.CENTER
+        rl.addView(mProgressBar)
+        rl.setBackgroundColor(Color.parseColor("#FFFFFF"))
+//        rl.setBackgr
+        // Ver-linke die Relative-Layout's miteinander
+        layout.addView(rl, params)
+
+        // Schalte den ProgressBar auf unsichtbar
+        hide()
+    }
+}
+
+class ErrorPopupHandler(mContext: Context) {
+
+    private val errorTextView: TextView
+
+    // Callback um sichtbar zu schalten
+    fun show(errortext: String) {
+        errorTextView.text = errortext
+        errorTextView.visibility = View.VISIBLE
+    }
+
+    // Callback um unsichtbar zu schalten
+    fun hide() {
+        errorTextView.visibility = View.INVISIBLE
+    }
+
+    // Init-Callback
+    init {
+
+        // Lade das Layout auf welche der Progressbar eingebettet werden soll
+        val layout = (mContext as Activity).findViewById<View>(android.R.id.content).rootView as ViewGroup
+
+        // Erstelle "TextView" und sichere die Referenz
+        errorTextView = TextView(mContext, null)
+
+
+        // Erstelle ein RelativeLayout um die Abmessungen (x,y) zu definieren
+        val params = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.MATCH_PARENT,
+            RelativeLayout.LayoutParams.MATCH_PARENT
+        )
+
+        // Erstelle ein weiteres RelativeLayout umd die Position zu definieren
+        val rl = RelativeLayout(mContext)
+        rl.gravity = Gravity.CENTER
+        rl.addView(errorTextView)
+
+        // Ver-linke die Relative-Layout's miteinander
+        layout.addView(rl, params)
+
+        // Schalte den ProgressBar auf unsichtbar
+        hide()
+    }
 }
