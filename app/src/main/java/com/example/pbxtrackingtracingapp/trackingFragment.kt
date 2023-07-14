@@ -17,7 +17,7 @@ import android.widget.RelativeLayout.LayoutParams
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
+import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Response
@@ -95,7 +95,7 @@ class trackingFragment:Fragment(R.layout.fragment_tracking) {
 
     private fun postComponentLink(){
         val progressBar = ProgressBarHandler(requireContext())
-//        val errorView = ErrorPopupHandler(requireContext())
+        val errorView = ErrorPopupHandler(requireContext())
 
         val queue = Volley.newRequestQueue(requireContext())
         val url =
@@ -117,14 +117,20 @@ class trackingFragment:Fragment(R.layout.fragment_tracking) {
                     val strResp = response.toString()
                     Log.d("API", strResp)
                     progressBar.hide()
-                    Toast.makeText(requireContext(), "Components successfully linked!", Toast.LENGTH_LONG).show()
+                    if (strResp.subSequence(0, 3)=="200"){
+                        Toast.makeText(requireContext(), strResp, Toast.LENGTH_LONG).show()
+                    }
+                    else{
+                        errorView.show(strResp)
+                    }
+
 
                 },
                 Response.ErrorListener { error ->
                     Log.d("API", "error => $error")
                     val errorString = error.toString()
                     progressBar.hide()
-//                    errorView.show()
+                    errorView.show(errorString)
                     Toast.makeText(requireContext(), errorString, Toast.LENGTH_LONG).show()
                 }
             ) {
@@ -304,19 +310,28 @@ class ProgressBarHandler(mContext: Context) {
     }
 }
 
+/**
+ * Diese Klasse stellt einen ErrorPopupHandler bereit. Dieser kann am Screen eingeblendet werden
+ * um dem User bei Lade/Arbeit-Schritten ein visuelles Feedback zu geben, dass die App
+ * funktioniert und der noch warten soll.
+ */
 class ErrorPopupHandler(mContext: Context) {
 
     private val errorTextView: TextView
+    private lateinit var rl: RelativeLayout
 
     // Callback um sichtbar zu schalten
-    fun show(errortext: String) {
-        errorTextView.text = errortext
+    fun show(errorText: String) {
+        errorTextView.text = errorText+"\n\nClick on text to continue"
         errorTextView.visibility = View.VISIBLE
+        errorTextView.setPadding(100,0,100,0)
+        rl.setBackgroundColor(Color.parseColor("#d6471f"))
     }
 
     // Callback um unsichtbar zu schalten
     fun hide() {
         errorTextView.visibility = View.INVISIBLE
+        rl.setBackgroundColor(Color.parseColor("#00000000"))
     }
 
     // Init-Callback
@@ -325,21 +340,23 @@ class ErrorPopupHandler(mContext: Context) {
         // Lade das Layout auf welche der Progressbar eingebettet werden soll
         val layout = (mContext as Activity).findViewById<View>(android.R.id.content).rootView as ViewGroup
 
-        // Erstelle "TextView" und sichere die Referenz
+        // Erstelle "ProgressBar" und sichere die Referenz
         errorTextView = TextView(mContext, null)
-
+        errorTextView.setTextColor(Color.parseColor("#000000"))
+        errorTextView.setOnClickListener(View.OnClickListener { view -> hide() })
 
         // Erstelle ein RelativeLayout um die Abmessungen (x,y) zu definieren
         val params = RelativeLayout.LayoutParams(
-            RelativeLayout.LayoutParams.MATCH_PARENT,
-            RelativeLayout.LayoutParams.MATCH_PARENT
+            LayoutParams.MATCH_PARENT,
+            LayoutParams.MATCH_PARENT,
         )
 
+
         // Erstelle ein weiteres RelativeLayout umd die Position zu definieren
-        val rl = RelativeLayout(mContext)
+        rl = RelativeLayout(mContext)
         rl.gravity = Gravity.CENTER
         rl.addView(errorTextView)
-
+//        rl.setBackgr
         // Ver-linke die Relative-Layout's miteinander
         layout.addView(rl, params)
 
