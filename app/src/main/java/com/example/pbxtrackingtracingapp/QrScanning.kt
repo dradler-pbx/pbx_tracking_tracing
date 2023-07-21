@@ -2,9 +2,11 @@ package com.example.pbxtrackingtracingapp
 
 import android.Manifest
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
@@ -19,6 +21,8 @@ import com.google.mlkit.vision.camera.CameraSourceConfig
 import com.google.mlkit.vision.camera.CameraXSource
 import com.google.mlkit.vision.common.InputImage
 import com.example.pbxtrackingtracingapp.databinding.ActivityQrScanningBinding
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 data class QRContent(val isPBXCode: Boolean,
                      val type: String,
@@ -43,6 +47,10 @@ class QrScanning : AppCompatActivity() {
     public lateinit var barcodeString : String
 
     private lateinit var targetType : String
+
+    private var serialNumbers = mutableListOf<String>()
+
+    private val partnumber_TEV = "068U3715"
 
     private fun interpretBarcode(rawBarcode:String): QRContent{
         var isPBXCode : Boolean = true
@@ -171,8 +179,11 @@ class QrScanning : AppCompatActivity() {
                 .build()
         )
 
-        cameraSourceConfig = CameraSourceConfig.Builder(this, barcodeScanner) {
+        // Erstelle den OCR Recognizer
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
+        cameraSourceConfig = CameraSourceConfig.Builder(this, barcodeScanner) {
+            // QR Scanning
             val task: Task<MutableList<Barcode>> = barcodeScanner.process(InputImage.fromBitmap(cameraSurfaceView.bitmap!!, 0))
             task.addOnSuccessListener { barcodes ->
 
@@ -199,6 +210,12 @@ class QrScanning : AppCompatActivity() {
                     }
                 }
             }
+
+            // OCR Scanning
+            val result = recognizer.process(InputImage.fromBitmap(cameraSurfaceView.bitmap!!, 0))
+            result.addOnSuccessListener {
+                analyseTextObject(it)
+            }
         }
             .setFacing(CameraSourceConfig.CAMERA_FACING_BACK)
             .build()
@@ -218,7 +235,52 @@ class QrScanning : AppCompatActivity() {
             cameraXSource.start()
         }
     }
+    /**
+     * Diese Funktion sucht im Text Object nach den akzeptierten Partnumbers und fügt eine gefundene Seriennummer einer Liste hinzu
+     */
+    private fun analyseTextObject(result: com.google.mlkit.vision.text.Text){
+        val resultText = result.text
 
+        // Check if the TEV partnumber is in the string
+        if (partnumber_TEV in resultText){
+            // look for the index of the string, because the batch number usually is displayed right after the partnumber
+            val indexOfPN = resultText.indexOf(partnumber_TEV)
+            val serialnumber = resultText.subSequence(indexOfPN+9, indexOfPN+14).toString()
+
+            // check if the found sequence is all numeric characters, if yes, add it to the list
+            if(isNumeric(serialnumber)){
+                // check, if the serialnumber is already entered twice in the list
+                val occurences = serialNumbers.groupingBy { serialnumber }.eachCount()[serialnumber]
+                if ( occurences == 2){
+                    Log.d(ContentValues.TAG, "Third entry of serialnumber: "+serialnumber)
+                    val data = Intent()
+                    data.putExtra("type", "tev")
+                    data.putExtra("part_number", "800601")
+                    data.putExtra("serial_number", serialnumber)
+                    data.putExtra("DD_number", "ME060000.013")
+
+                    setResult(Activity.RESULT_OK, data)
+
+                    closeAll()
+                    finish()
+                }
+                serialNumbers.add(0, serialnumber)
+
+                if (serialNumbers.size > 5) {
+                    serialNumbers.removeLast()
+                }
+            }
+            Log.d(ContentValues.TAG, result.text)
+            Log.d(ContentValues.TAG, result.text)
+
+
+        }
+
+    }
+
+    private fun isNumeric(toCheck: String): Boolean {
+        return toCheck.all { char -> char.isDigit() }
+    }
     /** Diese Funktion beantragt vom User die Rechte um auf die Kamera zuzugreifen
      */
     private fun askForCameraPermission() {

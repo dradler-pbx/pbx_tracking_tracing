@@ -55,6 +55,8 @@ dependencies {
 
     // implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.1.0'
     implementation 'com.google.mlkit:barcode-scanning:17.1.0'
+    implementation 'com.google.mlkit:text-recognition:16.0.0'
+
 
     // Camera library for Android
     implementation 'com.google.mlkit:camera:16.0.0-beta3'

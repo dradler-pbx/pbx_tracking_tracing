@@ -5,7 +5,7 @@
     <string name="SNFrameLabel">Serial number:</string>
     <string name="componentLabel">Component</string>
     <string name="cmpTypeLabel">Type:</string>
-    <string name="cmpSNLabel">Serial number:</string>
+    <string name="cmpSNLabel">Serial/Batch number:</string>
     <string name="cmpPNLabel">Part number:</string>
     <string name="scanBtnLabel">Scan</string>
     <string name="cmpDDLabel">DD number</string>
