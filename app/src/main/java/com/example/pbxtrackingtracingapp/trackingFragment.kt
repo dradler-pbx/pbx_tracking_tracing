@@ -263,7 +263,7 @@ class trackingFragment:Fragment(R.layout.fragment_tracking) {
 class ProgressBarHandler(mContext: Context) {
 
     private val mProgressBar: ProgressBar
-    private lateinit var rl: RelativeLayout
+    private var rl: RelativeLayout
 
     // Callback um sichtbar zu schalten
     fun show() {
@@ -323,6 +323,7 @@ class ErrorPopupHandler(mContext: Context) {
     // Callback um sichtbar zu schalten
     fun show(errorText: String) {
         errorTextView.text = errorText+"\n\nClick on text to continue"
+        errorTextView.fontFeatureSettings
         errorTextView.visibility = View.VISIBLE
         errorTextView.setPadding(100,0,100,0)
         rl.setBackgroundColor(Color.parseColor("#d6471f"))
