@@ -51,6 +51,10 @@ class QrScanning : AppCompatActivity() {
     private var serialNumbers = mutableListOf<String>()
 
     private val partnumber_TEV = "068U3715"
+    private val batchnumber_scheme_TEV = "iiiii"
+
+    private val partnumber_HPSwitch = "ACB-2UB507W"
+    private val batchnumber_scheme_HPSwitch = "iiiiill"
 
     private fun interpretBarcode(rawBarcode:String): QRContent{
         var isPBXCode : Boolean = true
@@ -248,7 +252,7 @@ class QrScanning : AppCompatActivity() {
             val serialnumber = resultText.subSequence(indexOfPN+9, indexOfPN+14).toString()
 
             // check if the found sequence is all numeric characters, if yes, add it to the list
-            if(isNumeric(serialnumber)){
+            if(checkStringStyle(serialnumber, batchnumber_scheme_TEV)){
                 // check, if the serialnumber is already entered twice in the list
                 val occurences = serialNumbers.groupingBy { serialnumber }.eachCount()[serialnumber]
                 if ( occurences == 2){
@@ -276,11 +280,65 @@ class QrScanning : AppCompatActivity() {
 
         }
 
+        // Check if the HP Switch partnumber is in the string
+        if (partnumber_HPSwitch in resultText) {
+            // look for the index of the string, because the batch number usually is displayed right after the partnumber
+            val indexOfPN = resultText.indexOf(partnumber_HPSwitch)
+            var check_it = false
+            if (indexOfPN>=0){
+                val serialnumber = resultText.subSequence(indexOfPN + 12, indexOfPN + 20).toString().replace(" ", "")
+                try{
+                    check_it = checkStringStyle(serialnumber, batchnumber_scheme_HPSwitch)
+                } finally {}
+                if (check_it) {
+                    Log.d(ContentValues.TAG, resultText)
+                    val occurences = serialNumbers.groupingBy { serialnumber }.eachCount()[serialnumber]
+                    if ( occurences == 2){
+                        Log.d(ContentValues.TAG, "Third entry of serialnumber: "+serialnumber)
+                        val data = Intent()
+                        data.putExtra("type", "hp-switch")
+                        data.putExtra("part_number", "800631")
+                        data.putExtra("serial_number", serialnumber)
+                        data.putExtra("DD_number", "ME050000.007")
+
+                        setResult(Activity.RESULT_OK, data)
+
+                        closeAll()
+                        finish()
+                    }
+                    serialNumbers.add(0, serialnumber)
+
+                    if (serialNumbers.size > 5) {
+                        serialNumbers.removeLast()
+                    }
+                }
+            }
+
+        }
+
     }
 
     private fun isNumeric(toCheck: String): Boolean {
         return toCheck.all { char -> char.isDigit() }
     }
+
+    private fun checkStringStyle(toCheck: String, reference: String): Boolean{
+        var chars_equal = true
+        if (toCheck.length != reference.length){
+            return false
+        }
+        for (i in 0..toCheck.length-1){
+            Log.d(ContentValues.TAG, "i: "+i.toString())
+            when(reference[i]){
+                'l' -> chars_equal = toCheck[i].isLetter()
+                'i' -> chars_equal = toCheck[i].isDigit()
+                's' -> chars_equal = toCheck[i].isWhitespace()
+            }
+            if (!chars_equal){return false}
+        }
+        return chars_equal
+    }
+
     /** Diese Funktion beantragt vom User die Rechte um auf die Kamera zuzugreifen
      */
     private fun askForCameraPermission() {
