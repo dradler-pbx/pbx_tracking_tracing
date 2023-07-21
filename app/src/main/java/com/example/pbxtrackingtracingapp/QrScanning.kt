@@ -23,6 +23,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.example.pbxtrackingtracingapp.databinding.ActivityQrScanningBinding
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.lang.Exception
 
 data class QRContent(val isPBXCode: Boolean,
                      val type: String,
@@ -55,6 +56,9 @@ class QrScanning : AppCompatActivity() {
 
     private val partnumber_HPSwitch = "ACB-2UB507W"
     private val batchnumber_scheme_HPSwitch = "iiiiill"
+
+    private val partnumber_pump = "0392 024 041"
+    private val batchnumber_scheme_pump = "iiiiiiii"
 
     private fun interpretBarcode(rawBarcode:String): QRContent{
         var isPBXCode : Boolean = true
@@ -274,10 +278,6 @@ class QrScanning : AppCompatActivity() {
                     serialNumbers.removeLast()
                 }
             }
-            Log.d(ContentValues.TAG, result.text)
-            Log.d(ContentValues.TAG, result.text)
-
-
         }
 
         // Check if the HP Switch partnumber is in the string
@@ -311,6 +311,48 @@ class QrScanning : AppCompatActivity() {
                     if (serialNumbers.size > 5) {
                         serialNumbers.removeLast()
                     }
+                }
+            }
+
+        }
+
+        if (partnumber_pump in resultText){
+
+            val indexOfPN = resultText.indexOf(partnumber_pump)
+            var check_it = false
+            var prod_date : String
+
+            // get the last textblock of result and extract the first 8 characters (= production date)
+            val result_textblocks = result.textBlocks
+            val last_block = result.textBlocks.last()
+            try {
+                prod_date = last_block.text.subSequence(0,8).toString()
+            } catch (e: Exception){
+                return
+            }
+            if (checkStringStyle(prod_date, batchnumber_scheme_pump)){
+                // generate the serialnumber (productiondate and shift) without whitespaces
+                val serialnumber = last_block.text.replace(" ","")
+
+                // check, how often the serial number is already read
+                val occurences = serialNumbers.groupingBy { serialnumber }.eachCount()[serialnumber]
+                if ( occurences == 2){
+                    Log.d(ContentValues.TAG, "Third entry of serialnumber: "+serialnumber)
+                    val data = Intent()
+                    data.putExtra("type", "pump")
+                    data.putExtra("part_number", "800679")
+                    data.putExtra("serial_number", serialnumber)
+                    data.putExtra("DD_number", "ME060000.004")
+
+                    setResult(Activity.RESULT_OK, data)
+
+                    closeAll()
+                    finish()
+                }
+                serialNumbers.add(0, serialnumber)
+
+                if (serialNumbers.size > 5) {
+                    serialNumbers.removeLast()
                 }
             }
 
