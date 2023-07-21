@@ -3,6 +3,7 @@ package com.example.pbxtrackingtracingapp
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -59,6 +60,9 @@ class QrScanning : AppCompatActivity() {
 
     private val partnumber_pump = "0392 024 041"
     private val batchnumber_scheme_pump = "iiiiiiii"
+
+    private val lp_sensor_identifier = "10 bar abs"
+    private val batchnumber_scheme_lp_sensor = "ii/ii"
 
     private fun interpretBarcode(rawBarcode:String): QRContent{
         var isPBXCode : Boolean = true
@@ -316,14 +320,11 @@ class QrScanning : AppCompatActivity() {
 
         }
 
+        // Check if the pump partnumber is in the string
         if (partnumber_pump in resultText){
-
-            val indexOfPN = resultText.indexOf(partnumber_pump)
-            var check_it = false
-            var prod_date : String
+            val prod_date : String
 
             // get the last textblock of result and extract the first 8 characters (= production date)
-            val result_textblocks = result.textBlocks
             val last_block = result.textBlocks.last()
             try {
                 prod_date = last_block.text.subSequence(0,8).toString()
@@ -358,6 +359,38 @@ class QrScanning : AppCompatActivity() {
 
         }
 
+        // Check if the LP sensor is in the stirng
+        if (lp_sensor_identifier in resultText){
+            Log.d(TAG, "SCAN RESULT:"+resultText)
+            var serialnumber = resultText.split("\n").last()
+            // check if he read the "CE" mark
+            if (serialnumber == "CE"){serialnumber = resultText.split("\n").dropLast(1).last()}
+
+            if(checkStringStyle(serialnumber, batchnumber_scheme_lp_sensor)){
+
+
+                // check, how often the serial number is already read
+                val occurences = serialNumbers.groupingBy { serialnumber }.eachCount()[serialnumber]
+                if ( occurences == 2){
+                    Log.d(ContentValues.TAG, "Third entry of serialnumber: "+serialnumber)
+                    val data = Intent()
+                    data.putExtra("type", "lp-sensor")
+                    data.putExtra("part_number", "800633")
+                    data.putExtra("serial_number", serialnumber)
+                    data.putExtra("DD_number", "ME050000.003")
+
+                    setResult(Activity.RESULT_OK, data)
+
+                    closeAll()
+                    finish()
+                }
+                serialNumbers.add(0, serialnumber)
+
+                if (serialNumbers.size > 5) {
+                    serialNumbers.removeLast()
+                }
+            }
+        }
     }
 
     private fun isNumeric(toCheck: String): Boolean {
@@ -375,6 +408,7 @@ class QrScanning : AppCompatActivity() {
                 'l' -> chars_equal = toCheck[i].isLetter()
                 'i' -> chars_equal = toCheck[i].isDigit()
                 's' -> chars_equal = toCheck[i].isWhitespace()
+                else -> chars_equal = toCheck[i] == reference[i]
             }
             if (!chars_equal){return false}
         }
