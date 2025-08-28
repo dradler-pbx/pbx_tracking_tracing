@@ -13,7 +13,7 @@
         />
 
     <item
-        android:id="@+id/settings"
+        android:id="@+id/settings_bnv"
         android:title="Settings"
         android:icon="@drawable/settings_icon"
         />

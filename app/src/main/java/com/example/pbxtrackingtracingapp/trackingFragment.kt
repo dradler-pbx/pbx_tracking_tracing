@@ -98,8 +98,9 @@ class trackingFragment:Fragment(R.layout.fragment_tracking) {
         val errorView = ErrorPopupHandler(requireContext())
 
         val queue = Volley.newRequestQueue(requireContext())
+        // API Tracking Google Script project: https://script.google.com/home/projects/1TLDC4VeCdE2S4FHEgS6lGsvwxCA3rTH_660NF_UDUMNG7qxfLFOOuSuQ/edit
         val url =
-            "https://script.google.com/macros/s/AKfycbzJauAnAvlcauQM1fxXw5YC1HNCduSZXMQ0hetVR0ilATK0zAjwH7rNKS6VkoVJzvqeIg/exec"
+            "https://script.google.com/macros/s/AKfycbwEcNvEVr2R8dT_0j3AtCGNxnxGc8GE4JkrnE9UoPP8MjkvZCsK6Vf6w38HW9mTD6h3Yw/exec"
 
         val requArray = listOf<String>(
             "action=linkComponents",
@@ -127,7 +128,12 @@ class trackingFragment:Fragment(R.layout.fragment_tracking) {
 
                 },
                 Response.ErrorListener { error ->
-                    Log.d("API", "error => $error")
+//                    Log.d("API", "error => $error")
+                    if (error.networkResponse != null) {
+                        val statusCode = error.networkResponse.statusCode
+                        val body = String(error.networkResponse.data, Charsets.UTF_8)
+                        Log.e("API", "Error code: $statusCode, body: $body")
+                    }
                     val errorString = error.toString()
                     progressBar.hide()
                     errorView.show(errorString)

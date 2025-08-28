@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import trackingFragment
 import OrdersFragment
+import SettingsFragment
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -14,6 +15,7 @@ class MainActivity : AppCompatActivity() {
 
         val trackingFragment=trackingFragment()
         val ordersFragment=OrdersFragment()
+        val settingsFragment = SettingsFragment()
 
         setCurrentFragment(trackingFragment)
 
@@ -21,6 +23,7 @@ class MainActivity : AppCompatActivity() {
             when(it.itemId){
                 R.id.cmp_tracking_bnv->setCurrentFragment(trackingFragment)
                 R.id.orders_bnv->setCurrentFragment(ordersFragment)
+                R.id.settings_bnv->setCurrentFragment(settingsFragment)
             }
             true
         }
